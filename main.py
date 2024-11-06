@@ -21,7 +21,7 @@ epocs = 100000
 # ..each epoc represents the time when all
 # the data has been ran throught..
 
-learning_rate = 0.5
+learning_rate = 0.01
 # ..keep it low..
 
 patterns = columns.shape[1]
@@ -38,17 +38,20 @@ output_neurons = 1
 # ..VARIABLES..
 weights1 = np.random.rand(hidden_neurons, input_neurons + 1)
 weights2 = np.random.rand(output_neurons, hidden_neurons + 1)
+
+weights1 = weights1 - 0.5
+weights2 = weights2 - 0.5
 # ..the weights matrix need to have 1 column more
 # because the bias is going to be inserted later on..
 
-errors = np.zeros(patterns)
+errors = np.zeros(10000)
 errors_mean = np.zeros(epocs)
 
 # ..TRAINING..
 
 # ..for each feature in each epoc..
 for i in range(epocs):
-    for j in range(patterns):
+    for j in range(10000):
         
         # bias_column = np.full((columns.shape[0], 1), bias)
         # input_biased = np.column_stack((bias_column, columns))
@@ -81,9 +84,7 @@ for i in range(epocs):
         # ..adjust the weight's matrix for the next feature..
         
     errors_mean[i] = errors.mean()
-    
-    if(i % 300 == 0):
-        print(errors_mean[i])
+    print(errors_mean[i])
     
 def test_model(input):
     input_biased = np.hstack((bias, input))
