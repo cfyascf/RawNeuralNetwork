@@ -1,30 +1,57 @@
+import random
 import numpy as np
 import pandas as pd
+
+# ------------- * FUNCTIONS * -------------
 
 def get_content(file_path):
     data = pd.read_csv(file_path)
     labels = data['Health_Issue']
     features = data.drop('Health_Issue', axis=1)
     
+    # ..transforming categorical values into numeric values..
     for column in features.columns:
         if(features[column].dtype == 'object'):
             features[column] = features[column].astype('category').cat.codes
             
-    return labels.to_numpy(), features.to_numpy()
+    testing_samples = 20 * len(data) / 100
+    
+    testing_labels = labels.iloc[:testing_samples, :]
+    testing_features = features.iloc[:testing_samples, :]
+    
+    training_labels = labels.iloc[testing_samples:, :]
+    training_features = features.iloc[testing_samples:, :]
+            
+    return testing_labels.to_numpy(), testing_features.to_numpy(), training_labels.to_numpy(), training_features.to_numpy()
 
-# ..DATA..
+def test_model():
+    sample = random.randrange(0, testing_samples)
+    
+    input_biased = np.hstack((bias, testing_features[sample]))
+    output = np.tanh(weights1.dot(input_biased))
+    output_biased = np.insert(output, 0, bias)
+    result = np.tanh(weights2.dot(output_biased))
+    
+    return result, testing_labels[sample]
+
+# ------------- * CONSTANTS * -------------
+
 dataset = 'synthetic_covid_impact_on_work.csv'
-labels, columns = get_content(dataset)
+testing_labels, testing_features, training_labels, training_features = get_content(dataset)
 
-# ..CONSTANTS..
+training_samples = len(training_features)
+testing_samples = len(testing_features)
+
 epocs = 100000 
 # ..each epoc represents the time when all
-# the data has been ran throught..
+# the data has been ran throught, if it's too big
+# it's probably going to lead your model to overfitting..
 
 learning_rate = 0.01
-# ..keep it low..
+# ..keep it low, this value has 
+# a lot of power in progressing the weights..
 
-patterns = columns.shape[1]
+patterns = training_features.shape[1]
 # ..how many features there is 
 # to train from..
 
@@ -35,29 +62,28 @@ input_neurons = patterns
 hidden_neurons = 128
 output_neurons = 1
 
-# ..VARIABLES..
+# ------------- * VARIABLES * -------------
 weights1 = np.random.rand(hidden_neurons, input_neurons + 1)
 weights2 = np.random.rand(output_neurons, hidden_neurons + 1)
-
-weights1 = weights1 - 0.5
-weights2 = weights2 - 0.5
 # ..the weights matrix need to have 1 column more
 # because the bias is going to be inserted later on..
 
-errors = np.zeros(10000)
+weights1 = weights1 - 0.5
+weights2 = weights2 - 0.5
+# ..in this specific dataset, as the values are considerably 
+# small, if the weights are too high, it's going to lead
+# problems in the gradient calculation..
+
+errors = np.zeros(training_samples)
 errors_mean = np.zeros(epocs)
 
-# ..TRAINING..
+# ------------- * TRAINING * -------------
 
-# ..for each feature in each epoc..
+# ..for each sample in each epoc..
 for i in range(epocs):
-    for j in range(10000):
+    for j in range(training_samples):
         
-        # bias_column = np.full((columns.shape[0], 1), bias)
-        # input_biased = np.column_stack((bias_column, columns))
-        # input_biased =columns['bias'] = 1
-        
-        input_biased = np.hstack((bias, columns[j]))
+        input_biased = np.hstack((bias, training_features[j]))
         # ..inserting the bias into the inputs..
         
         output = np.tanh(weights1.dot(input_biased))
@@ -69,7 +95,7 @@ for i in range(epocs):
         result = np.tanh(weights2.dot(output_biased))
         # ..output of hidden layer X output layer, the result..
         
-        error = labels[j] - result
+        error = training_labels[j] - result
         errors[j] = (error.transpose().dot(error))/2
         # ..get the error and make it quadractic so it's more noticeble,
         # bigger errors tend to outstand more..
@@ -84,17 +110,5 @@ for i in range(epocs):
         # ..adjust the weight's matrix for the next feature..
         
     errors_mean[i] = errors.mean()
-    print(errors_mean[i])
     
-def test_model(input):
-    input_biased = np.hstack((bias, input))
-    output = np.tanh(weights1.dot(input_biased))
-    output_biased = np.insert(output, 0, bias)
-    result = np.tanh(weights2.dot(output_biased))
-    
-    return result
-
-test_features = columns[0]
-test_label = labels[0]
-
-print(test_model(test_features), test_label)
+    # if(test)
