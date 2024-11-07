@@ -110,5 +110,15 @@ for i in range(epocs):
         # ..adjust the weight's matrix for the next feature..
         
     errors_mean[i] = errors.mean()
+    print(f"mean error of epoch: {errors_mean[i]}")
     
-    # if(test)
+    hits = 0
+    for i in range(100):
+        test_result, test_label = test_model()
+        
+        if test_label - test_result < 0.15:
+            hits += 1
+            
+    if(hits > 70):
+        print("early stoppin: model hit 85% or more of accuracy in testing five times.")
+        break
